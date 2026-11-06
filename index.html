@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>KcalScore</title>
+</head>
+<body>
+
+  <h1>KcalScore</h1>
+  <p>Enter a barcode to see whats in your food.</p>
+
+  <input type="text" id="barcode" placeholder="e.g. 1234567890123">
+  <button onclick="search()">Search</button>
+
+  <div id="result"></div>
+
+  <script>
+  async function search() {
+    const barcode = document.getElementById("barcode").value;
+    const url = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status !== 1) {
+      document.getElementById("result").textContent = "Sorry, that product isn't in the database.";
+      return;
+    }
+
+    const product = data.product;
+    const name = product.product_name || "Unknown";
+    const kcal = product.nutriments?.["energy-kcal_100g"] ?? "Unknown";
+    const grade = product.nutriscore_grade;
+    const nova = product.nova_group;
+
+    const points = { a: 100, b: 80, c: 60, d: 40, e: 20 };
+    const penalty = { 3: 10, 4: 20 };
+
+    let foodScore = "unavailable";
+    if (grade in points) {
+      foodScore = points[grade] - (penalty[nova] || 0) + "/100";
+    }
+
+    document.getElementById("result").textContent =
+      `${name}: ${kcal} kcal per 100 g, Food Score ${foodScore}`;
+  }
+  </script>
+
+</body>
+</html>
